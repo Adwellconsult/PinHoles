@@ -594,12 +594,8 @@ class AdvancedBulletImpactDetector:
                 if not self.paused:
                     ret, frame = self.cap.read()
                     if not ret:
-                        print("End of video reached - paused on last frame")
-                        print("Press 'q' to quit or other keys to continue...")
-                        self.paused = True
-                        frame = self.current_frame if self.current_frame is not None else frame
-                    else:
-                        self.current_frame = frame.copy()
+                        print("End of video")
+                        break
                 else:
                     frame = self.current_frame if self.current_frame is not None else frame
                 
@@ -614,9 +610,9 @@ class AdvancedBulletImpactDetector:
                     self.reference_frame = cv2.cvtColor(stabilized, cv2.COLOR_BGR2GRAY)
                     self.reference_frame = cv2.GaussianBlur(self.reference_frame, (5, 5), 0)
                 
-                # Store current frame for pausing (only when video is still playing)
+                # Store current frame for pausing
                 if not self.paused:
-                    pass  # current_frame is already updated above when frame is read
+                    self.current_frame = frame.copy()
                 
                 display = self.draw_target_and_impacts(stabilized)
                 cv2.imshow('Advanced Detector', display)
