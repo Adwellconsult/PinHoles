@@ -1,0 +1,276 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Set up Java 11
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Accept Android SDK licenses
+      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+    
+    - name: Install Android SDK components
+      run: |
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-33"
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2"
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653"
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install buildozer cython
+    
+    - name: Cache Buildozer global directory
+      uses: actions/cache@v3
+      with:
+        path: ~/.buildozer
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-
+    
+    - name: Cache Buildozer local directory
+      uses: actions/cache@v3
+      with:
+        path: .buildozer
+        key: ${{ runner.os }}-buildozer-local-${{ hashFiles('buildozer.spec') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-local-
+    
+    - name: Prepare build environment
+      run: |
+        # Create necessary directories
+        mkdir -p ~/.buildozer
+        
+        # Set environment variables
+        export ANDROID_HOME=$ANDROID_HOME
+        export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+        
+        # Verify Android setup
+        echo "Android Home: $ANDROID_HOME"
+        echo "Android NDK: $ANDROID_NDK_HOME"
+        ls -la $ANDROID_HOME/
+    
+    - name: Build APK with Buildozer
+      run: |
+        # Set Android environment variables
+        export ANDROID_HOME=$ANDROID_HOME
+        export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+        export ANDROIDSDK=$ANDROID_HOME
+        export ANDROIDNDK=$ANDROID_NDK_HOME
+        export ANDROIDAPI="33"
+        export NDKAPI="21"
+        
+        # Build the APK
+        buildozer android debug
+    
+    - name: Get build info
+      id: build_info
+      run: |
+        # Extract version from buildozer.spec
+        VERSION=$(grep "version =" buildozer.spec | cut -d'=' -f2 | tr -d ' ')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        
+        # Get commit SHA (short)
+        COMMIT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+        echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+        
+        # Set build timestamp
+        BUILD_TIME=$(date +'%Y%m%d-%H%M%S')
+        echo "build_time=$BUILD_TIME" >> $GITHUB_OUTPUT
+        
+        # Set APK filename
+        APK_NAME="BulletDetector-$VERSION-$COMMIT_SHA.apk"
+        echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
+    
+    - name: Rename and prepare APK
+      run: |
+        # Find the generated APK
+        APK_PATH=$(find bin/ -name "*.apk" | head -1)
+        echo "Found APK: $APK_PATH"
+        
+        # Create releases directory
+        mkdir -p releases
+        
+        # Copy and rename APK
+        cp "$APK_PATH" "releases/${{ steps.build_info.outputs.apk_name }}"
+        
+        # Create a latest symlink for convenience
+        cd releases
+        ln -sf "${{ steps.build_info.outputs.apk_name }}" "BulletDetector-latest.apk"
+        ls -la
+    
+    - name: Generate build manifest
+      run: |
+        cat > releases/build-info.json << EOF
+        {
+          "version": "${{ steps.build_info.outputs.version }}",
+          "commit_sha": "${{ steps.build_info.outputs.commit_sha }}",
+          "build_time": "${{ steps.build_info.outputs.build_time }}",
+          "apk_filename": "${{ steps.build_info.outputs.apk_name }}",
+          "github_run_id": "${{ github.run_id }}",
+          "github_ref": "${{ github.ref }}",
+          "github_actor": "${{ github.actor }}"
+        }
+        EOF
+    
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: bullet-detector-apk
+        path: releases/
+        retention-days: 90
+    
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          releases/${{ steps.build_info.outputs.apk_name }}
+          releases/build-info.json
+        name: Release ${{ steps.build_info.outputs.version }}
+        body: |
+          ## Bullet Impact Detector v${{ steps.build_info.outputs.version }}
+          
+          ### 🎯 Features
+          - Target center selection with red crosshair cursor
+          - Multiple scoring ring definition
+          - Video file and camera input support
+          - Real-time bullet impact detection
+          - Professional scoring system
+          - Mobile-optimized UI with aspect ratio preservation
+          
+          ### 📱 Installation
+          1. Download the APK file below
+          2. Enable "Install from unknown sources" on your Android device
+          3. Install the APK
+          4. Grant camera permissions when prompted
+          
+          ### 🔧 Build Information
+          - **Version:** ${{ steps.build_info.outputs.version }}
+          - **Commit:** ${{ steps.build_info.outputs.commit_sha }}
+          - **Built:** ${{ steps.build_info.outputs.build_time }}
+          - **Platform:** Android (ARM64/ARMv7)
+          
+          ### 📋 System Requirements
+          - Android 5.0+ (API 21+)
+          - Camera permission
+          - 100MB storage space
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Deploy to releases branch (on main branch)
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Configure git
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'actions@github.com'
+        
+        # Create or checkout releases branch
+        git fetch origin
+        if git show-ref --verify --quiet refs/remotes/origin/releases; then
+          git checkout -b releases origin/releases
+        else
+          git checkout --orphan releases
+          git rm -rf .
+        fi
+        
+        # Copy build artifacts
+        cp -r releases/* .
+        
+        # Create README for releases branch
+        cat > README.md << EOF
+        # Bullet Impact Detector - Releases
+        
+        This branch contains pre-built Android APK files for the Bullet Impact Detector app.
+        
+        ## Latest Release
+        - **File:** [\`${{ steps.build_info.outputs.apk_name }}\`](${{ steps.build_info.outputs.apk_name }})
+        - **Version:** ${{ steps.build_info.outputs.version }}
+        - **Built:** ${{ steps.build_info.outputs.build_time }}
+        - **Commit:** ${{ steps.build_info.outputs.commit_sha }}
+        
+        ## Installation Instructions
+        
+        ### Android Device
+        1. Download the APK file
+        2. Enable "Install from unknown sources" in Android settings
+        3. Install the APK
+        4. Grant camera permissions when prompted
+        
+        ### Features
+        - 🎯 Precise target center selection with red crosshair
+        - 🟢 Multiple scoring ring definition
+        - 📹 Video file and live camera support
+        - 📊 Real-time bullet impact detection and scoring
+        - 📱 Mobile-optimized interface
+        - 🔄 Aspect ratio preservation
+        - ⏸️ Video pause for accurate baseline setup
+        
+        ## Build Information
+        Generated automatically by GitHub Actions from the main branch.
+        EOF
+        
+        # Add and commit files
+        git add .
+        git commit -m "Release build ${{ steps.build_info.outputs.version }} from ${{ steps.build_info.outputs.commit_sha }}"
+        
+        # Push to releases branch
+        git push origin releases
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build summary
+      run: |
+        echo "## 🎯 Build Complete! 🎯" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Build Information" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version:** ${{ steps.build_info.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit:** ${{ steps.build_info.outputs.commit_sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **APK File:** ${{ steps.build_info.outputs.apk_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Time:** ${{ steps.build_info.outputs.build_time }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 Installation" >> $GITHUB_STEP_SUMMARY
+        echo "1. Download APK from the artifacts or releases" >> $GITHUB_STEP_SUMMARY
+        echo "2. Enable 'Install from unknown sources' on Android" >> $GITHUB_STEP_SUMMARY
+        echo "3. Install and grant camera permissions" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Access Points" >> $GITHUB_STEP_SUMMARY
+        echo "- **Artifacts:** Available in this workflow run" >> $GITHUB_STEP_SUMMARY
+        echo "- **Releases Branch:** \`releases\` branch for latest builds" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tagged Releases:** GitHub Releases for stable versions" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,63 @@
+{
+  "total_shots": 7,
+  "total_score": 30,
+  "average_score": 4.285714285714286,
+  "shots": [
+    {
+      "shot_number": 1,
+      "x": 6,
+      "y": 317,
+      "score": 0,
+      "ring": "Miss",
+      "timestamp": "2025-11-21T08:20:54.262438"
+    },
+    {
+      "shot_number": 2,
+      "x": 729,
+      "y": 385,
+      "score": 6,
+      "ring": "Ring 6",
+      "timestamp": "2025-11-21T08:21:05.152099"
+    },
+    {
+      "shot_number": 3,
+      "x": 785,
+      "y": 635,
+      "score": 5,
+      "ring": "Ring 5",
+      "timestamp": "2025-11-21T08:21:15.857263"
+    },
+    {
+      "shot_number": 4,
+      "x": 822,
+      "y": 366,
+      "score": 4,
+      "ring": "Ring 4",
+      "timestamp": "2025-11-21T08:21:27.004535"
+    },
+    {
+      "shot_number": 5,
+      "x": 648,
+      "y": 270,
+      "score": 5,
+      "ring": "Ring 5",
+      "timestamp": "2025-11-21T08:21:37.915347"
+    },
+    {
+      "shot_number": 6,
+      "x": 277,
+      "y": 345,
+      "score": 4,
+      "ring": "Ring 4",
+      "timestamp": "2025-11-21T08:21:48.706206"
+    },
+    {
+      "shot_number": 7,
+      "x": 577,
+      "y": 750,
+      "score": 6,
+      "ring": "Ring 6",
+      "timestamp": "2025-11-21T08:21:59.248836"
+    }
+  ]
+}

@@ -1,8 +1,136 @@
-# Bullet Impact Detection System
+# Bullet Impact Detector for Android
 
-Python application for real-time detection and tracking of bullet impacts on paper targets using computer vision.
+A professional mobile application for bullet impact detection and scoring using computer vision and target analysis.
 
-## Features
+## 🎯 Features
+
+- **Precise Target Setup**: Red crosshair cursor for accurate center selection
+- **Multiple Scoring Rings**: Define custom scoring zones with visual feedback
+- **Video & Camera Support**: Works with live camera or video files
+- **Real-time Detection**: Instant bullet impact detection and scoring
+- **Professional UI**: Mobile-optimized interface with aspect ratio preservation
+- **Smart Video Control**: Pauses on first frame for accurate baseline setup
+- **Export Results**: Save detection results and scoring data
+
+## 📱 Installation
+
+### Option 1: Download Pre-built APK
+1. Go to the [Releases](../../releases) page
+2. Download the latest APK file
+3. Enable "Install from unknown sources" on your Android device
+4. Install the APK and grant camera permissions
+
+### Option 2: Install from Releases Branch
+1. Visit the [`releases` branch](../../tree/releases)
+2. Download `BulletDetector-latest.apk`
+3. Install on your Android device
+
+### Option 3: Build from Source
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/PinHoles.git
+cd PinHoles
+
+# Install dependencies
+pip install -r requirements.txt
+pip install buildozer
+
+# Build APK
+buildozer android debug
+```
+
+## 🔧 System Requirements
+
+- **Android**: 5.0+ (API 21+)
+- **Architecture**: ARM64/ARMv7
+- **Permissions**: Camera access
+- **Storage**: ~100MB free space
+
+## 🚀 Quick Start
+
+1. **Launch App** → Main menu appears
+2. **Settings** → Configure video source (camera/file)
+3. **Baseline Setup** → Define target center and scoring rings
+4. **Detection** → Start monitoring for bullet impacts
+5. **Results** → View scores and export data
+
+## 📖 Usage Guide
+
+### Target Setup
+1. Touch target center (red crosshair guides placement)
+2. Touch ring edges to define scoring zones
+3. Rings are visible during setup, hidden during operation
+4. Press "Complete Setup" when finished
+
+### Detection Mode
+- Real-time impact detection
+- Automatic scoring based on defined rings
+- Visual feedback for detected impacts
+- Running score display
+
+## 🛠️ Development
+
+### Local Development
+```bash
+# Setup virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run desktop version
+python bullet_detector_android.py
+```
+
+### Building for Android
+```bash
+# Install buildozer
+pip install buildozer
+
+# Initialize buildozer (first time only)
+buildozer init
+
+# Build debug APK
+buildozer android debug
+
+# Build release APK (requires signing)
+buildozer android release
+```
+
+## 🔄 CI/CD Pipeline
+
+The project includes automated building via GitHub Actions:
+
+- **Triggers**: Push to main/develop, tags, manual dispatch
+- **Builds**: Android APK with Buildozer
+- **Deploys**: To releases branch and GitHub Releases
+- **Artifacts**: APK files with build metadata
+
+### Workflow Features
+- Automated APK generation
+- Version management from buildozer.spec
+- Caching for faster builds
+- Release creation for tagged versions
+- Deployment to releases branch
+
+## 📁 Project Structure
+
+```
+PinHoles/
+├── bullet_detector_android.py    # Main Android app
+├── buildozer.spec               # Android build configuration
+├── requirements.txt             # Python dependencies
+├── .github/
+│   └── workflows/
+│       └── build-android.yml    # CI/CD pipeline
+├── stills/
+│   └── sample2/                # Sample video files
+└── README.md                   # This file
+```
+
+## Legacy Desktop Applications
 
 ### Basic Detector (`bullet_impact_detector.py`)
 - Real-time bullet hole detection using frame differencing

@@ -17,6 +17,18 @@ class AdvancedBulletImpactDetector:
     
     def __init__(self, video_source=0):
         self.cap = cv2.VideoCapture(video_source)
+        self.is_webcam = isinstance(video_source, int)
+        
+        # Configure webcam settings if using camera
+        if self.is_webcam:
+            # Set webcam properties for better performance
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+            self.cap.set(cv2.CAP_PROP_FPS, 30)
+            print(f"Webcam initialized (Camera {video_source})")
+            print("Live video will run until you click to start baseline setup...")
+        else:
+            print(f"Video file loaded: {video_source}")
         self.reference_frame = None
         self.reference_keypoints = None
         self.reference_descriptors = None
@@ -30,6 +42,7 @@ class AdvancedBulletImpactDetector:
         self.circles = []  # List of circle radii
         self.selecting_circle = False
         self.current_circle_radius = 0
+        self.baseline_setup_started = False  # Track if user has started baseline setup
         
         # Debug mode
         self.debug_mode = False
@@ -79,6 +92,7 @@ class AdvancedBulletImpactDetector:
                     self.manual_center = (x, y)
                     self.target_center = (x, y)
                     self.circles = []  # Clear existing circles
+                    self.baseline_setup_started = True  # Mark that baseline setup has begun
                     print(f"Bullseye center set to: ({x}, {y})")
                     print("Now click on the outer edge of each target ring")
                     self.selecting_circle = True
@@ -549,7 +563,7 @@ class AdvancedBulletImpactDetector:
         print("Advanced Bullet Impact Detector with Manual Baseline")
         print("=" * 60)
         print("BASELINE SETUP MODE:")
-        print("1. Video will pause on first frame")
+        print("1. Video will pause on first frame (or webcam will freeze)")
         print("2. Click on bullseye center")
         print("3. Click on outer edge of each target ring")
         print("4. Press 'b' to complete baseline and start detection")
@@ -567,37 +581,66 @@ class AdvancedBulletImpactDetector:
         print("  'r' - Reset detection (keep baseline)")
         print("  'd' - Toggle debug mode")
         print("  't' - Adjust detection threshold (when debug on)")
-        print("  'SPACE' - Pause/resume video")
+        print("  'SPACE' - Pause/resume video (webcam only pauses processing)")
         print("")
         
         self.paused = False
         
         while True:
-            # Only read new frames after baseline setup is complete
+            # Handle different modes: live webcam, baseline setup, and detection
             if not self.baseline_captured:
-                # During baseline setup, use only the first frame
-                if self.current_frame is None:
+                # For webcam: continue live feed until user starts baseline setup
+                if self.is_webcam and not self.baseline_setup_started:
                     ret, frame = self.cap.read()
                     if not ret:
-                        print("Failed to read video file")
+                        print("Failed to read from webcam")
                         break
-                    self.current_frame = frame.copy()
-                    print("Video paused on first frame for baseline setup")
-                    print("Click on the bullseye center to begin...")
-                
-                # Always use the same frame during setup
-                frame = self.current_frame
-                display = self.draw_target_and_impacts(frame)
-                cv2.imshow('Advanced Detector', display)
+                    # Show live feed with instructions
+                    display = frame.copy()
+                    # Add live feed indicator
+                    cv2.rectangle(display, (5, 5), (display.shape[1]-5, 80), (0, 100, 0), -1)
+                    cv2.rectangle(display, (5, 5), (display.shape[1]-5, 80), (0, 255, 0), 3)
+                    cv2.putText(display, "LIVE WEBCAM - Click to start baseline setup", (15, 35),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                    cv2.putText(display, "Click anywhere on the target to begin...", (15, 60),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    cv2.imshow('Advanced Detector', display)
+                else:
+                    # During baseline setup, freeze frame (for both webcam and video)
+                    if self.current_frame is None or (self.is_webcam and self.baseline_setup_started):
+                        ret, frame = self.cap.read()
+                        if not ret:
+                            print("Failed to read video")
+                            break
+                        self.current_frame = frame.copy()
+                        if not self.is_webcam:
+                            print("Video paused on first frame for baseline setup")
+                        else:
+                            print("Webcam frame captured for baseline setup")
+                        print("Click on the bullseye center to begin...")
+                    
+                    # Use frozen frame during setup
+                    frame = self.current_frame
+                    display = self.draw_target_and_impacts(frame)
+                    cv2.imshow('Advanced Detector', display)
             else:
                 # After baseline is complete, handle normal video playback
                 if not self.paused:
                     ret, frame = self.cap.read()
                     if not ret:
-                        print("End of video reached - paused on last frame")
-                        print("Press 'q' to quit or other keys to continue...")
-                        self.paused = True
-                        frame = self.current_frame if self.current_frame is not None else frame
+                        # Handle end of video file vs webcam differently
+                        if not self.is_webcam:
+                            # Video file ended
+                            print("End of video reached - paused on last frame")
+                            print("Press 'q' to quit or other keys to continue...")
+                            self.paused = True
+                            frame = self.current_frame if self.current_frame is not None else frame
+                        else:
+                            # Webcam error - try to reconnect
+                            print("Webcam connection lost - attempting to reconnect...")
+                            self.cap.release()
+                            self.cap = cv2.VideoCapture(0)
+                            continue
                     else:
                         self.current_frame = frame.copy()
                 else:
@@ -637,7 +680,8 @@ class AdvancedBulletImpactDetector:
                     self.target_center = None
                     self.circles = []
                     self.selecting_circle = False
-                    print("Setup cleared - click on bullseye center")
+                    self.baseline_setup_started = False  # Reset baseline setup
+                    print("Setup cleared - live feed resumed (webcam) or restart video selection")
                 else:
                     print("Cannot clear baseline during detection mode")
             elif key == ord('u'):
@@ -700,6 +744,12 @@ class AdvancedBulletImpactDetector:
 
 
 if __name__ == "__main__":
-    source = "sample2.mp4"  # Change to video file path if needed""
+    # Default to webcam (0), change to video file path if needed
+    # Examples:
+    # source = 0          # Default webcam
+    # source = 1          # Secondary webcam
+    source = "sample2.mp4"  # Video file
+    
+    #source = 0  # Use webcam by default
     detector = AdvancedBulletImpactDetector(video_source=source)
     detector.run()
