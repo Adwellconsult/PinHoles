@@ -15,6 +15,7 @@ jobs:
     env:
       ANDROID_ACCEPT_LICENSES: true
       BUILDOZER_LOG_LEVEL: 2
+      BUILDOZER_ACCEPT_LICENSE: 1
     
     steps:
     - name: Checkout repository
@@ -79,6 +80,17 @@ jobs:
         pip install -r requirements.txt
         pip install buildozer cython
     
+    - name: Accept Buildozer license
+      run: |
+        # Create buildozer directory and accept license
+        mkdir -p ~/.buildozer
+        # Accept Buildozer license by creating acceptance file
+        echo "I have read and agree to the Buildozer license terms" > ~/.buildozer/license_accepted
+        # Also set environment variable for automatic acceptance
+        export BUILDOZER_ACCEPT_LICENSE=1
+        # Initialize buildozer to trigger license acceptance
+        echo "y" | buildozer init || true
+    
     - name: Cache Buildozer global directory
       uses: actions/cache@v3
       with:
@@ -133,6 +145,7 @@ jobs:
         export ANDROIDNDK=$ANDROID_NDK_HOME
         export ANDROIDAPI="33"
         export NDKAPI="21"
+        export BUILDOZER_ACCEPT_LICENSE=1
         
         # List available SDK components for debugging
         echo "=== Available SDK Components ==="
@@ -143,8 +156,8 @@ jobs:
         # Accept licenses one more time before build
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
         
-        # Build the APK
-        buildozer android debug
+        # Accept Buildozer license if prompted
+        echo "y" | buildozer android debug || buildozer android debug
     
     - name: Get build info
       id: build_info
