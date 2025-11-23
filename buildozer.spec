@@ -13,14 +13,27 @@ package.domain = com.pinholes.bulletdetector
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,json
+source.include_exts = py,png,jpg,kv,atlas,json,md
+
+# (list) Source files to exclude (let empty to not exclude anything)
+source.exclude_exts = spec
+
+# (list) List of directory to exclude (let empty to not exclude anything)
+source.exclude_dirs = tests, bin, .buildozer, .git, __pycache__
+
+# (list) List of exclusions using pattern matching
+source.exclude_patterns = license,*.txt,*.md,requirements.txt
 
 # (str) Application versioning (method 1)
 version = 1.0
 
+# (str) Application versioning (method 2)
+# version.regex = __version__ = ['"](.*?)['"] 
+# version.filename = %(source.dir)s/main.py
+
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,opencv-python,numpy,pillow,plyer,android
+requirements = python3,kivy==2.3.1,opencv-python==4.8.1.78,numpy,pillow,plyer,pyjnius,android
 
 # (str) Presplash of the application
 #presplash.filename = %(source.dir)s/data/presplash.png
@@ -33,6 +46,22 @@ orientation = landscape
 
 # (bool) Indicate if the application should be fullscreen or not
 fullscreen = 0
+
+# (string) Presplash of the application
+#presplash.filename = %(source.dir)s/data/presplash.png
+
+# (string) Icon of the application
+#icon.filename = %(source.dir)s/data/icon.png
+
+# (list) Permissions
+android.permissions = CAMERA,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,INTERNET,ACCESS_NETWORK_STATE
+
+# (list) Android application meta-data to set (key=value format)
+#android.meta_data =
+
+# (list) Android library project to add (will be added in the
+# project.properties automatically.)
+#android.library_references = @jar/my-lib-1.jar,@jar/my-lib-2.jar
 
 # (int) Target Android API, should be as high as possible.
 android.api = 33
@@ -50,7 +79,7 @@ android.sdk = 33
 # p4a.fork = kivy
 
 # (str) python-for-android branch to use
-# p4a.branch = master
+# p4a.branch = main
 
 # (str) python-for-android specific commit to use
 # p4a.commit = HEAD
@@ -58,11 +87,22 @@ android.sdk = 33
 # (str) python-for-android git clone directory (if empty, it will be automatically cloned from github)
 #p4a.source_dir =
 
-# (list) python-for-android whitelist
-#android.p4a_whitelist =
+# (str) The main.py to use
+# If not specified, buildozer will look for main.py in source.dir
+# This allows you to specify a different main file
+source.main = bullet_detector_android.py
 
 # (str) Bootstrap to use for android builds
 # p4a.bootstrap = sdl2
+
+# (str) Android entry point, default is ok for Kivy-based app
+#android.entrypoint = org.kivy.android.PythonActivity
+
+# (str) Full name of the Java class that implements Python Service
+# service.main_class = org.kivy.android.PythonService
+
+# (str) Android app theme, default is ok for Kivy-based app
+# android.theme = @android:style/Theme.NoTitleBar
 
 # (int) port number to specify an explicit --port= p4a argument (eg for bootstrap flask)
 #p4a.port =
@@ -83,33 +123,32 @@ android.logcat_filters = *:S python:D
 #android.copy_libs = 1
 
 # (list) The Android archs to build for, choices: armeabi-v7a, arm64-v8a, x86, x86_64
-# In past, was `android.arch` as we weren't supporting builds for multiple archs at the same time.
 android.archs = arm64-v8a, armeabi-v7a
-
-# (int) overrides automatic versionCode computation (used in build.gradle)
-# this is not the same as app version and should only be edited if you know what you're doing
-# android.numeric_version = 1
 
 # (bool) enables Android auto backup feature (Android API >=23)
 android.allow_backup = True
 
-# (str) XML file for custom backup rules (see official auto backup documentation)
-# android.backup_rules =
-
-# (str) If you need to insert variables into your AndroidManifest.xml file,
-# you can do so with the manifestPlaceholders property.
-# This property takes a map of key-value pairs. (via a string)
-# Usage example : android.manifest_placeholders = key:value, key2:value2, ...
-# android.manifest_placeholders = MY_PLACEHOLDER:my_value
-
-# (bool) Skip byte compile for .py files
-# android.no-byte-compile-python = False
+# (str) The format used to package the app for debug mode (apk or aab).
+android.debug_artifact = apk
 
 # (str) The format used to package the app for release mode (aab or apk).
-# android.release_artifact = aab
+android.release_artifact = apk
 
-# (str) The format used to package the app for debug mode (apk or aab).
-# android.debug_artifact = apk
+# (bool) Skip byte compile for .py files
+android.no-byte-compile-python = False
+
+# (str) Android gradle dependencies to add
+#android.gradle_dependencies =
+
+# (bool) Enable AndroidX support. Enable when 'android.gradle_dependencies'
+# contains an 'androidx' package, or any package from Kotlin source.
+#android.enable_androidx = False
+
+# (str) Android add java compile options
+#android.add_compile_options = "sourceCompatibility = 1.8", "targetCompatibility = 1.8"
+
+# (list) Gradle repositories to add
+#android.gradle_repositories = google(), mavenCentral()
 
 [buildozer]
 
