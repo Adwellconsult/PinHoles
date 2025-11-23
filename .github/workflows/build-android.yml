@@ -12,6 +12,10 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     
+    env:
+      ANDROID_ACCEPT_LICENSES: true
+      BUILDOZER_LOG_LEVEL: 2
+    
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -33,16 +37,25 @@ jobs:
         api-level: 30
         target: android-30
         ndk: true
+        accept-license: true
 
     - name: Install Android Build Tools
       run: |
         sdkmanager "build-tools;30.0.3"
     
     - name: Accept Android SDK licenses
-      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+      run: |
+        # Accept all Android SDK licenses
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        # Alternative method for stubborn licenses
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+        # List installed packages to verify
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list_installed
     
     - name: Install Android SDK components
       run: |
+        # Accept licenses before installing components
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
         $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-33"
         $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2"
         $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653"
@@ -87,6 +100,9 @@ jobs:
         export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
         export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
         
+        # Accept any remaining licenses
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        
         # Verify Android setup
         echo "Android Home: $ANDROID_HOME"
         echo "Android NDK: $ANDROID_NDK_HOME"
@@ -101,6 +117,9 @@ jobs:
         export ANDROIDNDK=$ANDROID_NDK_HOME
         export ANDROIDAPI="33"
         export NDKAPI="21"
+        
+        # Accept licenses one more time before build
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
         
         # Build the APK
         buildozer android debug
@@ -123,18 +142,6 @@ jobs:
         # Set APK filename
         APK_NAME="BulletDetector-$VERSION-$COMMIT_SHA.apk"
         echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
-
-    - name: Install Android build tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip
-        wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O cmdline-tools.zip
-        unzip -qq cmdline-tools.zip -d $HOME/cmdline-tools
-        ANDROID_SDK_ROOT=$HOME/android-sdk
-        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-        mv $HOME/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "build-tools;34.0.0"    
     
     - name: Rename and prepare APK
       run: |
