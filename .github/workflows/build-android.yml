@@ -27,8 +27,16 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
     
-    - name: Setup Android SDK
+    - name: Set up Android SDK
       uses: android-actions/setup-android@v3
+      with:
+        api-level: 30
+        target: android-30
+        ndk: true
+
+    - name: Install Android Build Tools
+      run: |
+        sdkmanager "build-tools;30.0.3"
     
     - name: Accept Android SDK licenses
       run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
