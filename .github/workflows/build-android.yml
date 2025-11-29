@@ -38,10 +38,6 @@ jobs:
         cmdline-tools-version: 10406996
         accept-android-sdk-licenses: true
         log-accepted-android-sdk-licenses: true
-        packages: |
-          platforms;android-33
-          build-tools;33.0.2
-          ndk;25.2.9519653
 
     - name: Accept all Android SDK licenses
       run: |
