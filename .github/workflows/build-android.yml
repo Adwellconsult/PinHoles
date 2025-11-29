@@ -34,36 +34,23 @@ jobs:
     
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
-      with:
-        api-level: 33
-        build-tools: 33.0.2
-        ndk: 25.2.9519653
-        cache: true
-
-    - name: Accept all Android SDK licenses
-      run: |
-        # Accept all Android SDK licenses comprehensively
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        # Alternative method for stubborn licenses
-        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        # Install latest build tools and accept their licenses
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" || true
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" || true
-        # Accept licenses again after installation
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        # List available packages
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list_installed
     
-    - name: Install Android SDK components
+    - name: Install Android SDK and accept licenses
       run: |
-        # Accept licenses before installing components
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        # Install consistent build tools version
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-33"
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2"
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653"
-        # Accept licenses after installation as well
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        # Accept all Android SDK licenses
+        yes | sdkmanager --licenses || true
+        
+        # Install required SDK components
+        sdkmanager "platforms;android-33"
+        sdkmanager "build-tools;33.0.2"
+        sdkmanager "ndk;25.2.9519653"
+        
+        # Accept licenses again after installation
+        yes | sdkmanager --licenses || true
+        
+        # Verify installation
+        echo "=== Installed SDK Components ==="
+        sdkmanager --list_installed
     
     - name: Cache pip dependencies
       uses: actions/cache@v3
@@ -111,52 +98,27 @@ jobs:
         # Create necessary directories
         mkdir -p ~/.buildozer
         
-        # Set environment variables
-        export ANDROID_HOME=$ANDROID_HOME
-        export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-        
-        # Accept any remaining licenses
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        
         # Verify Android setup
         echo "Android Home: $ANDROID_HOME"
-        echo "Android NDK: $ANDROID_NDK_HOME"
-        ls -la $ANDROID_HOME/
-    
-    - name: Final license acceptance before build
-      run: |
-        # Accept all licenses one final time before build
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        # Accept licenses for any build-tools that might be requested
-        for version in "34.0.0" "33.0.2" "32.0.0" "31.0.0" "30.0.3"; do
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;$version" || true
-        done
-        # Final license acceptance
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        echo "Android SDK Root: $ANDROID_SDK_ROOT"
+        echo "Available NDK versions:"
+        ls -la $ANDROID_HOME/ndk/ 2>/dev/null || echo "NDK directory not found"
+        
+        # Set NDK path (will be used by buildozer)
+        if [ -d "$ANDROID_HOME/ndk/25.2.9519653" ]; then
+          echo "NDK 25.2.9519653 found"
+        fi
     
     - name: Build APK with Buildozer
       run: |
-        # Set Android environment variables
-        export ANDROID_HOME=$ANDROID_HOME
+        # Set Android environment variables for buildozer
+        export ANDROID_SDK_ROOT=$ANDROID_HOME
         export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
-        export ANDROIDSDK=$ANDROID_HOME
-        export ANDROIDNDK=$ANDROID_NDK_HOME
         export ANDROIDAPI="33"
         export NDKAPI="21"
-        export BUILDOZER_ACCEPT_LICENSE=1
         
-        # List available SDK components for debugging
-        echo "=== Available SDK Components ==="
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list_installed
-        echo "=== Available Build Tools ==="
-        ls -la $ANDROID_HOME/build-tools/ || echo "No build-tools directory found"
-        
-        # Accept licenses one more time before build
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        
-        # Accept Buildozer license if prompted
-        echo "y" | buildozer android debug || buildozer android debug
+        # Build the APK
+        buildozer android debug
     
     - name: Get build info
       id: build_info
