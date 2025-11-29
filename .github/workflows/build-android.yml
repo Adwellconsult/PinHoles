@@ -35,9 +35,10 @@ jobs:
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
       with:
-        cmdline-tools-version: 10406996
-        accept-android-sdk-licenses: true
-        log-accepted-android-sdk-licenses: true
+        api-level: 33
+        build-tools: 33.0.2
+        ndk: 25.2.9519653
+        cache: true
 
     - name: Accept all Android SDK licenses
       run: |
