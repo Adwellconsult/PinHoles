@@ -35,11 +35,13 @@ jobs:
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
       with:
-        api-level: 33
-        target: android-33
-        ndk: true
-        accept-license: true
         cmdline-tools-version: 10406996
+        accept-android-sdk-licenses: true
+        log-accepted-android-sdk-licenses: true
+        packages: |
+          platforms;android-33
+          build-tools;33.0.2
+          ndk;25.2.9519653
 
     - name: Accept all Android SDK licenses
       run: |
@@ -302,7 +304,7 @@ jobs:
         - 📊 Real-time bullet impact detection and scoring
         - 📱 Mobile-optimized interface
         - 🔄 Aspect ratio preservation
-        - ⏸️ Video pause for accurate baseline setup
+        - ⏸️ Video pause for accurate baseline setup 
         
         ## Build Information
         Generated automatically by GitHub Actions from the main branch.
