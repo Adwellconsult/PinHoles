@@ -32,26 +32,19 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
     
-    - name: Set up Android SDK
-      uses: android-actions/setup-android@v3
-    
-    - name: Install Android SDK and accept licenses
+    - name: Install Android SDK components
       run: |
-        # Accept all Android SDK licenses
-        yes | sdkmanager --licenses || true
+        set -euo pipefail
+        yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "ndk;25.2.9519653" "build-tools;33.0.2"
+          SDKMANAGER="$SDKROOT/cmdline-tools/11.0/bin/sdkmanager"
+        fi
+        echo "Using sdkmanager: $SDKMANAGER"
+        # Install required components (each package as a separate argument)
+        yes | "$SDKMANAGER" --sdk_root="$SDKROOT" "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
+        # Accept licenses (defensive)
+        yes |
         
-        # Install required SDK components
-        sdkmanager "platforms;android-33"
-        sdkmanager "build-tools;33.0.2"
-        sdkmanager "ndk;25.2.9519653"
-        
-        # Accept licenses again after installation
-        yes | sdkmanager --licenses || true
-        
-        # Verify installation
-        echo "=== Installed SDK Components ==="
-        sdkmanager --list_installed
-    
     - name: Cache pip dependencies
       uses: actions/cache@v3
       with:
@@ -65,7 +58,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install buildozer cython
-    
+        
     - name: Accept Buildozer license
       run: |
         # Create buildozer directory and accept license
@@ -76,7 +69,7 @@ jobs:
         export BUILDOZER_ACCEPT_LICENSE=1
         # Initialize buildozer to trigger license acceptance
         echo "y" | buildozer init || true
-    
+        
     - name: Cache Buildozer global directory
       uses: actions/cache@v3
       with:
@@ -84,7 +77,7 @@ jobs:
         key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
         restore-keys: |
           ${{ runner.os }}-buildozer-
-    
+        
     - name: Cache Buildozer local directory
       uses: actions/cache@v3
       with:
