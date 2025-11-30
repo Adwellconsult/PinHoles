@@ -37,13 +37,6 @@ jobs:
         set -euo pipefail
         yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
         ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "ndk;25.2.9519653" "build-tools;33.0.2"
-          SDKMANAGER="$SDKROOT/cmdline-tools/11.0/bin/sdkmanager"
-        fi
-        echo "Using sdkmanager: $SDKMANAGER"
-        # Install required components (each package as a separate argument)
-        yes | "$SDKMANAGER" --sdk_root="$SDKROOT" "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
-        # Accept licenses (defensive)
-        yes |
         
     - name: Cache pip dependencies
       uses: actions/cache@v3
