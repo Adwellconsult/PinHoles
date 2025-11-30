@@ -119,6 +119,7 @@ jobs:
         fi
 
         # Find any configure.ac files (including within recipe or extracted dirs) and add m4 allowance for LT_SYS_SYMBOL_USCORE
+        # maxdepth 6 covers typical buildozer/.buildozer recipe extraction paths
         for f in $(find . -maxdepth 6 -type f -name configure.ac 2>/dev/null || true); do
           echo "Patching $f to allow LT_SYS_SYMBOL_USCORE"
           if ! grep -q "LT_SYS_SYMBOL_USCORE" "$f"; then
