@@ -102,7 +102,7 @@ jobs:
     - name: Build APK with Buildozer
       run: |
         # Create Buildozer's expected SDK directory structure
-        mkdir -p ~/.buildozer/android/platform/android-sdk
+        mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
         
         # Create symlinks to system Android SDK components
         ln -sf $ANDROID_HOME/build-tools ~/.buildozer/android/platform/android-sdk/build-tools
@@ -110,6 +110,9 @@ jobs:
         ln -sf $ANDROID_HOME/platform-tools ~/.buildozer/android/platform/android-sdk/platform-tools
         ln -sf $ANDROID_HOME/cmdline-tools ~/.buildozer/android/platform/android-sdk/cmdline-tools
         ln -sf $ANDROID_HOME/ndk ~/.buildozer/android/platform/android-sdk/ndk
+        
+        # Create symlink for sdkmanager in the old tools/bin location
+        ln -sf $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
         
         # Set Android environment variables for buildozer
         export ANDROID_SDK_ROOT=$ANDROID_HOME
