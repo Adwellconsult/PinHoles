@@ -35,8 +35,12 @@ jobs:
     - name: Install Android SDK components
       run: |
         set -euo pipefail
+        # Accept ALL licenses first (including future ones that buildozer might request)
         yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        # Install our required components
         ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "ndk;25.2.9519653" "build-tools;33.0.2"
+        # Accept licenses again after installation
+        yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
         
     - name: Cache pip dependencies
       uses: actions/cache@v3
@@ -102,6 +106,9 @@ jobs:
         export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
         export ANDROIDAPI="33"
         export NDKAPI="21"
+        
+        # Accept licenses one more time before buildozer runs
+        yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
         
         # Build the APK
         buildozer android debug
