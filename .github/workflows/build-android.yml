@@ -32,6 +32,16 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
     
+    - name: Install system build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          build-essential autoconf automake libtool libtool-bin m4 pkg-config cmake \
+          ca-certificates wget unzip git \
+          libffi-dev libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+          liblzma-dev libncurses5-dev libncursesw5-dev python3-dev \
+          libpng-dev libjpeg-dev libfreetype6-dev libharfbuzz-dev
+    
     - name: Install Android SDK components
       run: |
         set -euo pipefail
@@ -98,6 +108,28 @@ jobs:
         if [ -d "$ANDROID_HOME/ndk/25.2.9519653" ]; then
           echo "NDK 25.2.9519653 found"
         fi
+    
+    - name: Run autoupdate + autoreconf (fix configure macros)
+      run: |
+        set -euo pipefail
+
+        # Run autoupdate to modernize configure.ac files where available
+        if command -v autoupdate >/dev/null 2>&1; then
+          autoupdate || true
+        fi
+
+        # Find any configure.ac files (including within recipe or extracted dirs) and add m4 allowance for LT_SYS_SYMBOL_USCORE
+        # maxdepth 6 covers typical buildozer/.buildozer recipe extraction paths
+        for f in $(find . -maxdepth 6 -type f -name configure.ac 2>/dev/null || true); do
+          echo "Patching $f to allow LT_SYS_SYMBOL_USCORE"
+          if ! grep -q "LT_SYS_SYMBOL_USCORE" "$f"; then
+            sed -i '1i m4_pattern_allow([LT_SYS_SYMBOL_USCORE])' "$f" || true
+          fi
+          (cd "$(dirname "$f")" && autoreconf -fi) || true
+        done
+
+        # Try autoreconf in the repo root as a best effort
+        autoreconf -fi || true
     
     - name: Build APK with Buildozer
       run: |
