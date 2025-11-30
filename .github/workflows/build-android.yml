@@ -35,12 +35,38 @@ jobs:
     - name: Install Android SDK components
       run: |
         set -euo pipefail
-        # Accept ALL licenses first (including future ones that buildozer might request)
-        yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        # Install our required components plus the build-tools version buildozer wants
-        ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "ndk;25.2.9519653" "build-tools;33.0.2" "build-tools;36.1.0"
-        # Accept licenses again after installation
-        yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        SDKROOT=${ANDROID_HOME:-/usr/local/lib/android/sdk}
+        # Prefer known cmdline-tools locations
+        if [ -x "$SDKROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
+          SDKMANAGER="$SDKROOT/cmdline-tools/latest/bin/sdkmanager"
+        elif [ -x "$SDKROOT/cmdline-tools/11.0/bin/sdkmanager" ]; then
+          SDKMANAGER="$SDKROOT/cmdline-tools/11.0/bin/sdkmanager"
+        else
+          echo "sdkmanager not found under $SDKROOT/cmdline-tools"
+          exit 1
+        fi
+        echo "Using sdkmanager: $SDKMANAGER"
+        # Accept existing licenses, then install required components
+        yes | "$SDKMANAGER" --sdk_root="$SDKROOT" --licenses || true
+        yes | "$SDKMANAGER" --sdk_root="$SDKROOT" \
+          "platform-tools" \
+          "platforms;android-33" \
+          "build-tools;33.0.2" \
+          "build-tools;36.1.0" \
+          "ndk;25.2.9519653"
+        yes | "$SDKMANAGER" --sdk_root="$SDKROOT" --licenses || true
+
+    # Install system build dependencies required for autoreconf / native builds
+    - name: Install system build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          autoconf automake libtool m4 pkg-config \
+          build-essential cmake ninja-build \
+          zlib1g-dev libffi-dev libssl-dev libbz2-dev \
+          libreadline-dev libsqlite3-dev liblzma-dev
+        sudo apt-get clean
+        sudo rm -rf /var/lib/apt/lists/*
         
     - name: Cache pip dependencies
       uses: actions/cache@v3
