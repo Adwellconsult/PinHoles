@@ -42,6 +42,19 @@ jobs:
         # Accept licenses again after installation
         yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
         
+    # Install system build dependencies required for autoreconf / native builds
+    - name: Install system build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          autoconf automake libtool m4 pkg-config \
+          build-essential cmake ninja-build \
+          zlib1g-dev libffi-dev libssl-dev libbz2-dev \
+          libreadline-dev libsqlite3-dev liblzma-dev \
+          git
+        sudo apt-get clean
+        sudo rm -rf /var/lib/apt/lists/*
+
     - name: Cache pip dependencies
       uses: actions/cache@v3
       with:
