@@ -37,8 +37,8 @@ jobs:
         set -euo pipefail
         # Accept ALL licenses first (including future ones that buildozer might request)
         yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        # Install our required components
-        ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "ndk;25.2.9519653" "build-tools;33.0.2"
+        # Install our required components plus the build-tools version buildozer wants
+        ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "ndk;25.2.9519653" "build-tools;33.0.2" "build-tools;36.1.0"
         # Accept licenses again after installation
         yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
         
