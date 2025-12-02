@@ -111,6 +111,15 @@ jobs:
           echo "NDK 25.2.9519653 found"
         fi
     
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          autoconf automake libtool libtool-bin pkg-config build-essential \
+          python3-dev libffi-dev libssl-dev zlib1g-dev
+        python3 -m pip install --upgrade pip
+        python3 -m pip install docwriter
+    
     - name: Build APK with Buildozer
       run: |
         # Create Buildozer's expected SDK directory structure
